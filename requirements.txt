@@ -1,0 +1,9 @@
+Flask
+Flask-Cors
+gevent
+scrapy 
+beautifulsoup4 
+nltk
+sumy
+numpy
+python-dotenv
