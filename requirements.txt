@@ -1,9 +1,5 @@
 Flask
 Flask-Cors
-gevent
-scrapy 
+gevent 
 beautifulsoup4 
-nltk
-sumy
-numpy
 python-dotenv
