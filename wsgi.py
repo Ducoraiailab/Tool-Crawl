@@ -2,11 +2,6 @@ from gevent.pywsgi import WSGIServer
 from main import app
 import nltk
 
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
-
 import os
 
 PORT = int(os.getenv('PORT', '9000'))
