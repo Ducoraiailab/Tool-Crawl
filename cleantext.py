@@ -303,6 +303,5 @@ def clean_main(s):
     s = str(s)
     s1 = remove_icon_facebook(s)
     s2 = convert_to_vietnamese_standard(s1)
-    s3 = remove_raw_text(s2)
-    s4 = remove_other(s3)
+    s4 = remove_other(s2)
     return s4
