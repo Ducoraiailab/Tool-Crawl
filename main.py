@@ -1,19 +1,18 @@
 import requests
-import os
+from bs4 import BeautifulSoup
+import random
+import time
 import threading
 import re
+import json
+import cleantext
 from flask import (
     Flask,
     jsonify,
     request,
 )
-from sumy.parsers.html import HtmlParser
-from sumy.nlp.tokenizers import Tokenizer
-from sumy.summarizers.text_rank import TextRankSummarizer
-import requests
 from flask_cors import CORS
 from dotenv import load_dotenv
-import numpy
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
@@ -43,43 +42,32 @@ def get_google_search_results(query):
     else:
         print(f"Error: {response.status_code}")
         return []
-def get_content_summary_from_url(url, sentences_count=200):
-    try:
-        # Gửi yêu cầu HTTP với timeout 20 giây
-        response = requests.get(url, timeout=20)
-
-        if response.status_code == 200:
-            parser = HtmlParser.from_url(url, Tokenizer("en"))
-            document = parser.document
-
-            summarizer = TextRankSummarizer()
-            summary = summarizer(document, sentences_count=sentences_count)
-
-            content = [str(sentence) for sentence in summary]
-
-            return content
-        else:
-            print(f"Failed to fetch content from URL: {url}")
-            return None
-
-    except (requests.exceptions.RequestException, requests.exceptions.Timeout) as e:
-        print(f"Error occurred while fetching content from URL: {url}")
+def get_page_content(url):
+    user_agent = random.choice(USER_AGENTS)
+    headers = {"User-Agent": user_agent}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.content
+    else:
+        print(f"Failed to retrieve the page. Status code: {response.status_code}")
         return None
 
-
+def extract_text_from_webpage(url):
+    page_content = get_page_content(url)
+    if page_content:
+        soup = BeautifulSoup(page_content, 'html.parser')
+        text = soup.get_text()
+        text = cleantext.clean_main(text)
+        return text.strip()
+    return None
 def process_url(url):
-    content = get_content_summary_from_url(url)
+    content = extract_text_from_webpage(url)
     if content:
         result = {
             'url': url,
             'content': content
         }
         all_results.append(result)
-def clean_text(text):
-    cleaned_text = re.sub(r'[\t\n\r]', ' ', text)
-    cleaned_text = re.sub(r'\s+', ' ', cleaned_text)
-    cleaned_text = cleaned_text.strip()
-    return cleaned_text
 @app.route('/api/search', methods=['POST'])
 def search_and_save():
     data = request.get_json()
@@ -100,7 +88,7 @@ def search_and_save():
         thread.join()
     current_results = all_results.copy()
     all_results.clear()
-    return jsonify(current_results)  
+    return jsonify(current_results) 
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=9000)
