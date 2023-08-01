@@ -14,6 +14,7 @@ from flask import (
 )
 from flask_cors import CORS
 from dotenv import load_dotenv
+import concurrent.futures
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
@@ -26,6 +27,7 @@ USER_AGENTS = [
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36 Edg/92.0.902.55"
 ]
+# Lấy link GG từ GG_API
 def get_google_search_results(query):
     api_key = os.getenv("API_KEY")
     cx = os.getenv("CX")
@@ -50,6 +52,7 @@ def get_google_search_results(query):
     else:
         print(f"Error: {response.status_code}")
         return []
+#Kiểm tra request có thành công không
 def get_page_content(url):
     user_agent = random.choice(USER_AGENTS)
     headers = {"User-Agent": user_agent}
@@ -68,6 +71,12 @@ def extract_text_from_webpage(url):
         text = cleantext.clean_main(text)
         return text.strip()
     return None
+
+def process_url_with_timeout(url):
+        result = process_url(url)
+        if result is not None:  
+            all_results.append(result)
+            
 def process_url(url):
     content = extract_text_from_webpage(url)
     if content:
@@ -84,19 +93,25 @@ def search_and_save():
 
     search_query = data['search_query']
     search_results = get_google_search_results(search_query)
-    threads.clear()
-    for url in search_results:
-        thread = threading.Thread(target=process_url, args=(url,))
-        threads.append(thread)
+    # Tao luồng 
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        for url in search_results:
+            thread = executor.submit(process_url_with_timeout, url)
+            future_list.append(thread) 
 
-    for thread in threads:
-        thread.start()
-
-    for thread in threads:
-        thread.join()
+        # set thời gian chạy tối đa mỗi luồng
+        completed, _ = concurrent.futures.wait(future_list, timeout=15)
+        # Kiểm tra trạng thái của từng đối tượng Future
+        # THông báo log trạng thái từng luồng URL hoàn thành hay ko
+        for future in future_list:
+            if future in completed:
+                print(f"URL {future} đã hoàn thành.")  
+            else:
+                future.cancel()
+                print(f"URL {future} không hoàn thành (bị hủy).")
     current_results = all_results.copy()
     all_results.clear()
-    return jsonify(current_results) 
+    return jsonify(current_results)
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=9000)
