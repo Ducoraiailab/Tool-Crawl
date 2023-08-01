@@ -1,7 +1,5 @@
 from gevent.pywsgi import WSGIServer
 from main import app
-import nltk
-
 import os
 
 PORT = int(os.getenv('PORT', '9000'))
