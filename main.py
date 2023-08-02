@@ -70,7 +70,7 @@ def extract_text_from_webpage(url):
         soup = BeautifulSoup(page_content, 'html.parser')
         text = soup.get_text()
         text = cleantext.clean_main(text)
-        return text.strip()
+        return text
     return None
 
 def process_url_with_timeout(url):
