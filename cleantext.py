@@ -1,4 +1,5 @@
 
+
 import re
 from unicodedata import normalize
 def remove_icon_facebook(s):
@@ -46,11 +47,20 @@ def make_dictionary_literal():
     dictionary = dict(zip(vietnamese_raw, vietnamese_standard))
 
     return dictionary
+
 def convert_to_vietnamese_standard(s):
     return normalize('NFC', s)
+#Remove_raw_text
 def remove_raw_text(s):
     a = ' '.join(re.findall('[\w\(\)\.\,\:\- ]+', s))
     return " ".join(a.split()).strip()
+#Tách html  thành array
+def convert_to_array(text):
+    # Xóa các ký tự xuống dòng trước khi tách
+    cleaned_text = text.replace('\n', ' ')
+    # Tách thành các đoạn text trước khi xuống dòng
+    paragraphs = [p.strip() for p in re.split(r'\s{2,}', cleaned_text) if p.strip() != ""]
+    return paragraphs
 def remove_other(s):
     # Bo chu xau
     d1 = [b'\xda\x80', b'\xda\x81', b'\xda\x82', b'\xda\x83', b'\xda\x84', b'\xda\x85', b'\xda\x86',
@@ -298,10 +308,12 @@ def remove_other(s):
     for item in d:
         raw = raw.replace(item, b'')
     return raw.decode()
-    
+
+# Main
 def clean_main(s):
     s = str(s)
     s1 = remove_icon_facebook(s)
     s2 = convert_to_vietnamese_standard(s1)
     s4 = remove_other(s2)
-    return s4
+    s5 = convert_to_array(s4)
+    return s5
